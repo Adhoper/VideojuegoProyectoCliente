@@ -10,6 +10,8 @@ namespace VideojuegoProyectoCliente
 {
     internal class Program
     {
+        private static readonly SemaphoreSlim _semaphore = new SemaphoreSlim(3, 3); // Semáforo para controlar el acceso a la conexión WebSocket
+
         static async Task Main(string[] args)
         {
             using (ClientWebSocket clientWebSocket = new ClientWebSocket())
@@ -37,9 +39,10 @@ namespace VideojuegoProyectoCliente
 
                 while (true)
                 {
-                    
+                    await _semaphore.WaitAsync(); // Esperamos adquirir el semáforo antes de enviar una solicitud al servidor
+
                     await Task.Delay(1000);
-                    string input ="";
+                    string input = "";
                     if (receivedMessage == "\u001b[36mMundos Disponibles: Jimwestt y Kethan. Escoja uno:\u001b[0m")
                     {
                         Console.Write($"\u001b[33mEscoja el mundo: \u001b[0m\n");
@@ -52,10 +55,13 @@ namespace VideojuegoProyectoCliente
                     }
                     else if (receivedMessage == "\u001b[36mSe ha elegido Jimwestt.\u001b[0m" || receivedMessage == "\u001b[36mSe ha elegido Kethan.\u001b[0m")
                     {
+                        Console.WriteLine("Presione enter para recoger objetos");
+                        Console.ReadLine();
                         Console.Write($"\u001b[33mRecogiendo Objetos... \u001b[0m\n");
-                        await Task.Delay(1000);
+                        //await Task.Delay(1000);
+                        Console.ReadLine();
                         Console.Write($"\u001b[33mRecogiendo Objetos... \u001b[0m\n");
-                        await Task.Delay(500);
+                        Console.ReadLine();
                         Console.Write($"\u001b[33mRecogiendo Objetos... \u001b[0m\n");
 
                         await Task.Delay(3000);
@@ -73,7 +79,6 @@ namespace VideojuegoProyectoCliente
                     }
 
                     if (input.ToLower() == "exit")
-
                         break;
 
                     if (input != "")
@@ -87,10 +92,13 @@ namespace VideojuegoProyectoCliente
                     {
                         Console.WriteLine("Entrada no válida. Por favor, ingrese un valor valido.");
                     }
+
+                    _semaphore.Release(); // Liberamos el semáforo después de enviar la solicitud al servidor
                 }
 
                 await clientWebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Cerrando conexión", CancellationToken.None);
             }
         }
     }
+
 }
